@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Admin\\Documents\\Dev\\CoreBuffers\\CoreBuffers\\CoreBuffers.csproj",
-      "projectName": "CoreBuffers",
-      "projectPath": "C:\\Users\\Admin\\Documents\\Dev\\CoreBuffers\\CoreBuffers\\CoreBuffers.csproj",
+      "projectUniqueName": "C:\\Users\\Admin\\Documents\\Dev\\Hand2Note4\\CoreBuffers\\CoreBuffers\\CoreBuffers2.csproj",
+      "projectName": "CoreBuffers2",
+      "projectPath": "C:\\Users\\Admin\\Documents\\Dev\\Hand2Note4\\CoreBuffers\\CoreBuffers\\CoreBuffers2.csproj",
       "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Admin\\Documents\\Dev\\CoreBuffers\\CoreBuffers\\obj\\",
+      "outputPath": "C:\\Users\\Admin\\Documents\\Dev\\Hand2Note4\\CoreBuffers\\CoreBuffers\\obj\\",
       "projectStyle": "PackageReference",
       "crossTargeting": true,
       "fallbackFolders": [
