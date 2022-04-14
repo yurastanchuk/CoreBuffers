@@ -8,18 +8,19 @@ public class
 BufferedListStorage<T>{
     public List<BufferedList<T>> Items {get;} 
     public int Position {get;private set;}
-    public BufferedListStorage(SizedListStorage<T> sizedListStorage, SizedArrayStorage<T> sizedArrayStorage, int initialSize = 0) {
+    public BufferedListStorage(BufferCollections<T> collections, int initialSize = 0) {
         Items = new List<BufferedList<T>>(capacity: initialSize);
-        ListStorage = sizedListStorage;
-        ArrayStorage = sizedArrayStorage;
         for (int i = 0; i < initialSize; i++) 
-            Items.Add(new BufferedList<T>(ListStorage, ArrayStorage));
+            Items.Add(new BufferedList<T>(collections));
+
+        _collections = collections;
     }
-    /// <summary>
-    /// Is used to get List from BufferedList
-    /// </summary>
-    public SizedListStorage<T> ListStorage {get;} 
-    public SizedArrayStorage<T> ArrayStorage {get;}
+
+    private BufferCollections<T> _collections;
+
+    private SizedListStorage<T> _listStorage => _collections.ListStorage;
+    private SizedArrayStorage<T> _arrayStorage => _collections.ArrayStorage;
+    private ImmutableBufferStorage<T> _immutableBufferStorage => _collections.ImmutableBufferStorage;
 
     public BufferedList<T> 
     GetList()  {
@@ -29,64 +30,66 @@ BufferedListStorage<T>{
             item.Reclaim();
             return item;
         }
-        var result = new BufferedList<T>(ListStorage, ArrayStorage);
+        var result = new BufferedList<T>(_collections);
         Items.Add(result);
         return result;
     }
     
     public void Reclaim() {
         Position = 0;
-        ListStorage.Reclaim();
-        ArrayStorage.Reclaim();
     }
 }
 
 public static class 
 BufferedList{
     public static BufferedList<T>
-    New<T>() => new BufferedList<T>(new SizedListStorage<T>(), new SizedArrayStorage<T>());
+    New<T>() => new BufferedList<T>(new BufferCollections<T>());
 }
 
 public class 
 BufferedList<T> : IEnumerable<T>, IList<T>{
     public T[] Objects {get; private set;}
-    public bool Remove(T item) {
-        throw new NotImplementedException();
-    }
-
+    
     public int Count {get; private set;}
     public bool IsReadOnly { get; }
 
-    /// <summary>
-    /// Is used to get List from BufferedList
-    /// </summary>
-    private SizedListStorage<T> ListStorage {get;}
-    private SizedArrayStorage<T> ArrayStorage {get;} 
-    public BufferedList(SizedListStorage<T> listStorage, SizedArrayStorage<T> arrayStorage, int initialSize = 10) {
+
+
+    public BufferedList(BufferCollections<T> collections, int initialSize = 10) {
         Objects = new T[initialSize];
         Count = 0;
-        ListStorage =  listStorage;
-        ArrayStorage = arrayStorage;
+        Collections = collections;
     }
 
     public BufferedList(int initialSize = 10) {
         Objects = new T[initialSize];
         Count = 0;
+    }
+
+    public BufferCollections<T> Collections {get;}
+    private SizedListStorage<T> ListStorage => Collections.ListStorage;
+    private SizedArrayStorage<T> ArrayStorage => Collections.ArrayStorage;
+    private ImmutableBufferStorage<T> ImmutableBufferStorage => Collections.ImmutableBufferStorage;
+
+    /*public BufferedList(int initialSize = 10) {
+        Objects = new T[initialSize];
+        Count = 0;
         ListStorage =  new SizedListStorage<T>();
         ArrayStorage = new SizedArrayStorage<T>();
-    }
+        ImmutableBufferStorage = new ImmutableBufferStorage<T>(new BufferedListStorage<T>());
+    }*/
     
     public BufferedList(BufferedList<T> other) {
         Objects = new T[other.Count];
         Count = 0;
+        Collections = other.Collections;
         AddBufferedList(other);
-        ListStorage = other.ListStorage;
-        ArrayStorage = other.ArrayStorage;
     }
     
     public int Capacity => Objects.Length;
 
-    public int IndexOf(T item) {
+    public int 
+    IndexOf(T item) {
         var equalityComparer = EqualityComparer<T>.Default;
         for (var i = 0; i < Count; i++) {
             if (equalityComparer.Equals(Objects[i], item))
@@ -95,16 +98,22 @@ BufferedList<T> : IEnumerable<T>, IList<T>{
         return -1;
     }
 
-    public void Insert(int index, T item) {
+    public void 
+    Insert(int index, T item) {
         throw new NotImplementedException();
     }
 
-    public void RemoveAt(int index) {
+    public bool 
+    Remove(T item) {
         throw new NotImplementedException();
     }
 
-    public T this[int index]
-    {
+    public void 
+    RemoveAt(int index) {
+        throw new NotImplementedException();
+    }
+
+    public T this[int index]{
         get => Objects[index];
         set{
             while (index >= Objects.Length) 
@@ -117,7 +126,8 @@ BufferedList<T> : IEnumerable<T>, IList<T>{
     Add(T item) {
         if (Count == Objects.Length)
             ExtendBuffer();
-            
+        if (Count == Objects.Length)
+            throw new InvalidOperationException();
         Objects[Count] = item;
         Count ++;
     }
@@ -151,7 +161,8 @@ BufferedList<T> : IEnumerable<T>, IList<T>{
         AddRange(other, 0, other.Count);
     }
     
-    private void ExtendBuffer() {
+    private void 
+    ExtendBuffer() {
         var result = new T[Objects.Length + 4]; 
         for (var i = 0; i < Objects.Length; i++) 
             result[i] = Objects[i];
@@ -215,6 +226,7 @@ BufferedList<T> : IEnumerable<T>, IList<T>{
         //_enumerator.Reset();
         return this;
     }
+    
     public List<T>
     ToList() {
         var result = ListStorage.GetList(Count);
@@ -227,6 +239,10 @@ BufferedList<T> : IEnumerable<T>, IList<T>{
         return result;
     }
 
+    public ImmutableBuffer<T>
+    ToImmutableBuffer() =>
+        ImmutableBufferStorage.EmptyBuffer.Add(this);
+    
     public T[]
     GetEmptyArray(int size) {
         var result = ArrayStorage.GetArray(Count);
@@ -240,6 +256,11 @@ BufferedList<T> : IEnumerable<T>, IList<T>{
             result[i] = this[i];
 
         return result;
+    }
+
+    public void
+    SetLast(T item) {
+        Objects[Count - 1] = item;
     }
 }
 }

@@ -19,13 +19,13 @@ BuffersHelper{
     }
      
     public static ImmutableBuffer<T> 
-    ToImmutableBuffer<T>(this IList<T> list, ImmutableBufferStorage<T>? buffer = null) where T : new() =>
+    ToImmutableBuffer<T>(this IList<T> list, ImmutableBufferStorage<T> buffer) where T : new() =>
         buffer != null ? buffer.CreateBuffer(list) : ImmutableBuffer.Create(list);
 
     public static ImmutableBuffer<T> 
     ToImmutableBuffer<T>(this IList<T> list, EntityBuffer<T> buffer) where T : new() =>
-        buffer.ImmutableBufferStorage.CreateBuffer(list);
-
+        buffer.CreateImmutableBuffer(list);
+    
     public static ImmutableBuffer<T> 
     ToImmutableBuffer<T>(this T[] array, ImmutableBufferStorage<T> bufferStorage) where T : new() =>
         bufferStorage.CreateBuffer(array);
@@ -35,6 +35,12 @@ BuffersHelper{
         bufferStorage != null 
             ? bufferStorage.CreateBuffer(array.ToList())
             : ImmutableBufferStorage<T>.Empty.CreateBuffer(array.ToList());
+
+    public static ImmutableBuffer<T> 
+    SingleToImmutableBuffer<T>(this T item, ImmutableBufferStorage<T>? bufferStorage = null) where T : new() =>
+        bufferStorage != null 
+            ? bufferStorage.CreateBuffer(item)
+            : ImmutableBufferStorage<T>.Empty.CreateBuffer(item);
 
     public static ImmutableBuffer<T> ToImmutableBuffer<T>(this BufferedList<T> bufferedList, ImmutableBufferStorage<T> bufferStorage) where T : new() =>
         bufferStorage.CreateBuffer(bufferedList.Objects, bufferedList.Count);
@@ -68,6 +74,20 @@ BuffersHelper{
     ForEach<T>(this BufferedList<T> items, Action<T> action) {
         foreach(var item in items)
             action(item);
+    }
+
+    public static BufferedList<T>
+    ToBufferedList<T>(this T item, BufferCollections<T> buffer) {
+        var result = buffer.BufferedListStorage.GetList();
+        result.Add(item);
+        return result;
+    }
+
+    public static BufferedList<T>
+    ToBufferedList<T>(this T item, EntityBuffer<T> buffer) where T : new() {
+        var result = buffer.BufferedListStorage.GetList();
+        result.Add(item);
+        return result;
     }
 }
 }

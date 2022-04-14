@@ -8,20 +8,18 @@ namespace CoreBuffers {
     
 public class 
 EntityBuffer<T> where T : new() {
-    public ImmutableBufferStorage<T> ImmutableBufferStorage {get;} 
-    public BufferedListStorage<T> BufferedListStorage {get;}
     public ObjectBuffer<T> Objects {get;}
+    public BufferCollections<T> Collections {get;}
 
     public EntityBuffer() {
         Objects = new ObjectBuffer<T>();
-        ListStorage = new SizedListStorage<T>();
-        ArrayStorage = new SizedArrayStorage<T>();
-        BufferedListStorage = new BufferedListStorage<T>(ListStorage, ArrayStorage);
-        ImmutableBufferStorage = new ImmutableBufferStorage<T>(BufferedListStorage);
+        Collections = new BufferCollections<T>();
     }
 
-    private SizedListStorage<T> ListStorage {get;} 
-    private SizedArrayStorage<T> ArrayStorage {get;}
+    public ImmutableBufferStorage<T> ImmutableBufferStorage => Collections.ImmutableBufferStorage;
+    public BufferedListStorage<T> BufferedListStorage => Collections.BufferedListStorage;
+    public SizedListStorage<T> ListStorage => Collections.ListStorage;
+    public SizedArrayStorage<T> ArrayStorage => Collections.ArrayStorage;
 
     public T
     GetObject() => Objects.GetObject();
@@ -33,51 +31,21 @@ EntityBuffer<T> where T : new() {
     GetList() => BufferedListStorage.GetList();
 
     public List<T>
-    GetList(int size) => ListStorage.GetList(size);
+    GetSizedList(int size) => ListStorage.GetList(size);
     
     public T[]
     GetArray(int size) => ArrayStorage.GetArray(size);
 
+    public ImmutableBuffer<T>
+    CreateImmutableBuffer(T item) => ImmutableBufferStorage.CreateBuffer(item);
+    
+    public ImmutableBuffer<T>
+    CreateImmutableBuffer(IList<T> source, int? count = null) => ImmutableBufferStorage.CreateBuffer(source, count);
+    
     public void 
     Reclaim() {
         Objects.Reclaim();
-        ImmutableBufferStorage.Reclaim();
-        BufferedListStorage.Reclaim();
-        ListStorage.Reclaim();
-        ArrayStorage.Reclaim();
-    }
-}
-
-public class 
-ValueCollectionsBuffer<T>{
-    public ImmutableBufferStorage<T> ImmutableBufferStorage {get;} 
-    public BufferedListStorage<T> BufferedListStorage {get;}
-
-    public ValueCollectionsBuffer() {
-        ListStorage = new SizedListStorage<T>();
-        ArrayStorage = new SizedArrayStorage<T>();
-        BufferedListStorage = new BufferedListStorage<T>(ListStorage, ArrayStorage);
-        ImmutableBufferStorage = new ImmutableBufferStorage<T>(BufferedListStorage);
-    }
-
-    public SizedListStorage<T> ListStorage {get;} 
-    public SizedArrayStorage<T> ArrayStorage {get;}
-
-    public ImmutableBuffer<T>
-    GetImmutableBuffer(int size) => ImmutableBufferStorage.GetBuffer(size);
-
-    public BufferedList<T>
-    GetList() => BufferedListStorage.GetList();
-
-    public T[]
-    GetArray(int size) => ArrayStorage.GetArray(size);
-
-    public void 
-    Reclaim() {
-        ImmutableBufferStorage.Reclaim();
-        BufferedListStorage.Reclaim();
-        ListStorage.Reclaim();
-        ArrayStorage.Reclaim();
+        Collections.Reclaim();
     }
 }
 

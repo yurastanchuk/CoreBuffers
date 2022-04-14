@@ -8,37 +8,33 @@ namespace CoreBuffers {
 public class 
 ImmutableBuffer {
     public static ImmutableBuffer<T>
-    Create<T>(T item) => new ImmutableBuffer<T>(buffer: new T[1]{item}, bufferStorage: new ImmutableBufferStorage<T>(new BufferedListStorage<T>(new SizedListStorage<T>(), new SizedArrayStorage<T>())));
+    Create<T>(T item) => new ImmutableBuffer<T>(buffer: new T[1]{item}, bufferStorage: new ImmutableBufferStorage<T>(new BufferCollections<T>()));
     
     public static ImmutableBuffer<T>
-    Create<T>(params T[] objects) => new ImmutableBuffer<T>(buffer: objects, bufferStorage: new ImmutableBufferStorage<T>(new BufferedListStorage<T>(new SizedListStorage<T>(), new SizedArrayStorage<T>())));
+    Create<T>(params T[] objects) => new ImmutableBuffer<T>(buffer: objects, bufferStorage: new ImmutableBufferStorage<T>(new BufferCollections<T>()));
 
     public static ImmutableBuffer<T>
-    Create<T>(IList<T> objects) => new ImmutableBuffer<T>(buffer: objects.ToArray(), bufferStorage: new ImmutableBufferStorage<T>(new BufferedListStorage<T>(new SizedListStorage<T>(), new SizedArrayStorage<T>())));
+    Create<T>(IList<T> objects) => new ImmutableBuffer<T>(buffer: objects.ToArray(), bufferStorage: new ImmutableBufferStorage<T>(new BufferCollections<T>()));
 }
 
 public class 
 ImmutableBuffer<T> : IEnumerable<T>, IList<T>, ICollection<T>{
     public T[] Objects {get;}
     
-    public ImmutableBuffer(int size, ImmutableBufferStorage<T> bufferStorage, SizedListStorage<T>? listsBuffer = null,  SizedArrayStorage<T>? arrayBuffer = null) {
+    public ImmutableBuffer(int size, ImmutableBufferStorage<T> bufferStorage) {
         Objects = new T[size];
         States = bufferStorage;
         Count = size;
-        ListStorage = listsBuffer ?? new SizedListStorage<T>();
-        ArrayStorage = arrayBuffer ?? new SizedArrayStorage<T>();
     }
     
-    public ImmutableBuffer(T[] buffer, ImmutableBufferStorage<T> bufferStorage, SizedListStorage<T>? listsBuffer = null,  SizedArrayStorage<T>? arrayBuffer = null) {
+    public ImmutableBuffer(T[] buffer, ImmutableBufferStorage<T> bufferStorage) {
         Objects = buffer;
         Count = buffer.Length;
         States = bufferStorage;
-        ListStorage = listsBuffer ?? new SizedListStorage<T>();
-        ArrayStorage = arrayBuffer ?? new SizedArrayStorage<T>();
     }
 
     public static ImmutableBuffer<T>
-    Empty {get;} = new ImmutableBuffer<T>(size: 0, bufferStorage:new ImmutableBufferStorage<T>(new BufferedListStorage<T>(new SizedListStorage<T>(), new SizedArrayStorage<T>())));
+    Empty {get;} = new ImmutableBuffer<T>(size: 0, bufferStorage:new ImmutableBufferStorage<T>(new BufferCollections<T>()));
     
     public bool IsReadOnly => true;
     
@@ -88,11 +84,11 @@ ImmutableBuffer<T> : IEnumerable<T>, IList<T>, ICollection<T>{
     /// <summary>
     /// Is used to get List from BufferedList
     /// </summary>
-    private SizedListStorage<T> ListStorage {get;} 
-    private SizedArrayStorage<T> ArrayStorage {get;} 
+    private BufferedListStorage<T> ListStorage => States.Collections.BufferedListStorage;
+    private SizedArrayStorage<T> ArrayStorage => States.Collections.ArrayStorage;
 
-    public List<T>
-    GetMutableList(int size) => ListStorage.GetList(size);
+    public BufferedList<T>
+    GetList() => ListStorage.GetList();
 
     public T[]
     GetEmptyArray(int size) => ArrayStorage.GetArray(size);
@@ -114,8 +110,18 @@ ImmutableBuffer<T> : IEnumerable<T>, IList<T>, ICollection<T>{
         var newImmutableBuffer = States.GetBuffer(Count + count.Value);
         for (var i = 0; i < Count; i++) 
             newImmutableBuffer.Objects[i] = Objects[i];
-        for (var i = Count; i < count; i++) 
-            newImmutableBuffer.Objects[i] = item[i];
+        for (var i = 0; i < count; i++) 
+            newImmutableBuffer.Objects[i + Count] = item[i];
+        return newImmutableBuffer;
+    }
+
+    public ImmutableBuffer<T>
+    Add(BufferedList<T> list) {
+        var newImmutableBuffer = States.GetBuffer(Count + list.Count);
+        for (var i = 0; i < Count; i++) 
+            newImmutableBuffer.Objects[i] = Objects[i];
+        for (var i = 0; i < list.Count; i++) 
+            newImmutableBuffer.Objects[i + Count] = list[i];
         return newImmutableBuffer;
     }
     
@@ -124,8 +130,8 @@ ImmutableBuffer<T> : IEnumerable<T>, IList<T>, ICollection<T>{
         var newImmutableBuffer = States.GetBuffer(Count + item.Length);
         for (var i = 0; i < Count; i++) 
             newImmutableBuffer.Objects[i] = Objects[i];
-        for (var i = Count; i < item.Length; i++) 
-            newImmutableBuffer.Objects[i] = item[i];
+        for (var i = 0; i < item.Length; i++) 
+            newImmutableBuffer.Objects[i + Count] = item[i];
         return newImmutableBuffer;
     }
     
@@ -215,21 +221,19 @@ ImmutableBuffer<T> : IEnumerable<T>, IList<T>, ICollection<T>{
 public class 
 ImmutableBufferStorage<T> {
     private List<ImmutableBufferSizedStorage<T>> Buffers {get;set;}
-    private BufferedListStorage<T> BufferedLists {get;set;} 
-    public  ImmutableBufferStorage(BufferedListStorage<T> bufferedListStorage, int initialSize = 0) {
+    
+    public  ImmutableBufferStorage(BufferCollections<T> collections, int initialSize = 0) {
         Buffers = new List<ImmutableBufferSizedStorage<T>>(initialSize);
-        BufferedLists = bufferedListStorage;
         GetExpandBuffer(initialSize);
-        ListStorage = bufferedListStorage.ListStorage;
-        ArrayStorage = bufferedListStorage.ArrayStorage;
+        Collections = collections;
     }
 
     public static ImmutableBufferStorage<T>
-    Empty {get;} = new (new BufferedListStorage<T>(new SizedListStorage<T>(), new SizedArrayStorage<T>()));
+    Empty {get;} = new (new BufferCollections<T>());
 
-    private SizedListStorage<T> ListStorage {get;}
-    private SizedArrayStorage<T> ArrayStorage {get;}
-    
+    public readonly BufferCollections<T> Collections;
+    private BufferedListStorage<T> BufferedLists => Collections.BufferedListStorage;
+
     private List<ImmutableBufferSizedStorage<T>>
     GetExpandBuffer(int size) {
         var newBuffer = new List<ImmutableBufferSizedStorage<T>>(size + 1);
@@ -242,14 +246,14 @@ ImmutableBufferStorage<T> {
     }
     
     public ImmutableBuffer<T>
-    EmptyBuffer => Buffers[0].GetObject(this, ListStorage, ArrayStorage);
+    EmptyBuffer => GetBuffer(0);
     
     public ImmutableBuffer<T>
     GetBuffer(int size) {
         if (Buffers.Count > size)
-            return Buffers[size].GetObject(this , ListStorage, ArrayStorage);
+            return Buffers[size].GetObject(this);
         Buffers = GetExpandBuffer(size);
-        return Buffers[size].GetObject(this , ListStorage, ArrayStorage);
+        return Buffers[size].GetObject(this);
     }
 
     public BufferedList<T>
@@ -257,12 +261,8 @@ ImmutableBufferStorage<T> {
 
     public void
     Reclaim() {
-        ListStorage.Reclaim();
-        ArrayStorage.Reclaim();
         for (var i = 0; i < Buffers.Count; i++) 
             Buffers[i].Reclaim();
-        
-        BufferedLists.Reclaim();
     }
 
     public ImmutableBuffer<T>
@@ -292,13 +292,13 @@ ImmutableBufferSizedStorage<T> {
     }
 
     public ImmutableBuffer<T> 
-    GetObject(ImmutableBufferStorage<T> bufferStorage, SizedListStorage<T> listsStorage,  SizedArrayStorage<T> arrayStorage) {
+    GetObject(ImmutableBufferStorage<T> bufferStorage) {
         Position++;
         if (Objects.Count > Position){
             var item = Objects[Position];
             return item;
         }
-        var result = new ImmutableBuffer<T>(size: SizeOfList, bufferStorage: bufferStorage,  listsStorage, arrayStorage);
+        var result = new ImmutableBuffer<T>(size: SizeOfList, bufferStorage: bufferStorage);
         Objects.Add(result);
         return result;
     }

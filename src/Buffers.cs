@@ -3,7 +3,42 @@ using System.Collections;
 using System.Collections.Generic;
 
 namespace CoreBuffers {
-    
+   
+public class 
+BufferCollections<T>{
+    public ImmutableBufferStorage<T> ImmutableBufferStorage {get;} 
+    public BufferedListStorage<T> BufferedListStorage {get;}
+    public SizedListStorage<T> ListStorage {get;} 
+    public SizedArrayStorage<T> ArrayStorage {get;}
+
+    public BufferCollections() {
+        ListStorage = new SizedListStorage<T>();
+        ArrayStorage = new SizedArrayStorage<T>();
+        ImmutableBufferStorage = new ImmutableBufferStorage<T>(this);
+        BufferedListStorage = new BufferedListStorage<T>(this);
+    }
+
+    public ImmutableBuffer<T>
+    GetImmutableBuffer(int size) => ImmutableBufferStorage.GetBuffer(size);
+
+    public BufferedList<T>
+    GetList() => BufferedListStorage.GetList();
+
+    public T[]
+    GetArray(int size) => ArrayStorage.GetArray(size);
+
+    public void 
+    Reclaim() {
+        ImmutableBufferStorage.Reclaim();
+        BufferedListStorage.Reclaim();
+        ListStorage.Reclaim();
+        ArrayStorage.Reclaim();
+    }
+
+    public ImmutableBuffer<T>
+    ImmutableBufferEmpty => ImmutableBufferStorage.GetBuffer(0);
+}
+
 public class 
 StructArrayBuffer<T> where T: struct{
     public T[][] Buffers {get;private set;} 
