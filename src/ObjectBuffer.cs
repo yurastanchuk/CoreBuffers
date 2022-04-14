@@ -69,6 +69,9 @@ ValueCollectionsBuffer<T>{
     public BufferedList<T>
     GetList() => BufferedListStorage.GetList();
 
+    public T[]
+    GetArray(int size) => ArrayStorage.GetArray(size);
+
     public void 
     Reclaim() {
         ImmutableBufferStorage.Reclaim();
