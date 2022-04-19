@@ -89,5 +89,8 @@ BuffersHelper{
         result.Add(item);
         return result;
     }
+
+    public static T
+    Last<T>(this BufferedList<T> list) => list[^1];
 }
 }

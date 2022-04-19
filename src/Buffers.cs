@@ -453,4 +453,31 @@ LazyBuffer<Tin, Tout>{
     }
 }
 
+
+public class 
+DictionariesBuffer<TKey, TValue> {
+    public List<Dictionary<TKey, TValue>> Objects {get;} 
+    public int Position {get;private set;}
+    public DictionariesBuffer(int initialSize = 0) {
+        Objects = new List<Dictionary<TKey, TValue>>(capacity: initialSize);
+        for (int i = 0; i < initialSize; i++) 
+            Objects.Add(new Dictionary<TKey, TValue>());
+    }
+    
+    public Dictionary<TKey, TValue> 
+    GetObject() {
+        Position++;
+        if (Objects.Count > Position){
+            var item = Objects[Position];
+            item.Clear();
+            return item;
+        }
+        var result = new Dictionary<TKey, TValue>();
+        Objects.Add(result);
+        return result;
+    }
+    
+    public void Reclaim() => Position = 0;
+}
+
 }
