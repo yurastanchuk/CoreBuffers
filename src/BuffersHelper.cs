@@ -11,7 +11,7 @@ BuffersHelper{
     MapToImmutableBuffer<TIn, TOut>(this IEnumerable<TIn> enumerable, Func<TIn, TOut> convert) => 
         ImmutableBuffer.Create<TOut>(enumerable.Select(convert).ToArray());
 
-    public static BufferedList<T> ToBufferedList<T>(this IEnumerable<T> iEnumerable, BufferedList<T> bufferedList) where T : new() {
+    public static BufferedList<T> ToBufferedList<T>(this List<T> iEnumerable, BufferedList<T> bufferedList) where T : new() {
         foreach (var item in iEnumerable) {
             bufferedList.Add(item);
         }
