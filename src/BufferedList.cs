@@ -157,6 +157,12 @@ BufferedList<T> : IEnumerable<T>, IList<T>{
     }
 
     public void
+    AddRange(T[] other) {
+        for (var i = 0; i < other.Length; i++) 
+            Add(other[i]);
+    }
+
+    public void
     AddBufferedList(BufferedList<T> other) {
         AddRange(other, 0, other.Count);
     }
@@ -239,6 +245,15 @@ BufferedList<T> : IEnumerable<T>, IList<T>{
         return result;
     }
 
+    public List<T>
+    ToNewList() {
+        var result = new List<T>(Count);
+        for (var i = 0; i < Count; i++) 
+            result.Add(this[i]);
+        
+        return result;
+    }
+
     public ImmutableBuffer<T>
     ToImmutableBuffer() =>
         ImmutableBufferStorage.EmptyBuffer.Add(this);
@@ -252,6 +267,15 @@ BufferedList<T> : IEnumerable<T>, IList<T>{
     public T[]
     ToArray() {
         var result = ArrayStorage.GetArray(Count);
+        for (var i = 0; i < Count; i++) 
+            result[i] = this[i];
+
+        return result;
+    }
+
+    public T[]
+    ToNewArray() {
+        var result = new T[Count];
         for (var i = 0; i < Count; i++) 
             result[i] = this[i];
 
