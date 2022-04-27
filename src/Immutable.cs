@@ -76,7 +76,7 @@ ImmutableBuffer<T> : IEnumerable<T>, IList<T>, ICollection<T>{
     }
 
     public int Count {get;}
-
+    public int Length => Count;
     public bool IsEmpty => Count == 0;
 
     public ImmutableBufferStorage<T> States {get;}
@@ -101,6 +101,14 @@ ImmutableBuffer<T> : IEnumerable<T>, IList<T>, ICollection<T>{
         for (var i = 0; i < Count; i++) 
             newImmutableBuffer.Objects[i] = Objects[i];
         newImmutableBuffer.Objects[Count] = item;
+        return newImmutableBuffer;
+    }
+
+    public ImmutableBuffer<T>
+    Clone() {
+        var newImmutableBuffer = States.GetBuffer(Count);
+        for (var i = 0; i < Count; i++) 
+            newImmutableBuffer.Objects[i] = Objects[i];
         return newImmutableBuffer;
     }
 
@@ -134,6 +142,20 @@ ImmutableBuffer<T> : IEnumerable<T>, IList<T>, ICollection<T>{
             newImmutableBuffer.Objects[i + Count] = item[i];
         return newImmutableBuffer;
     }
+
+    public ImmutableBuffer<T>
+    Insert(int index, T item) {
+        var newImmutableBuffer = States.GetBuffer(Count + 1);
+        for (var i = 0; i < index; i++) 
+            newImmutableBuffer.Objects[i] = Objects[i];
+
+        newImmutableBuffer.Objects[index] = item;
+
+        for (var i = index + 1; i < Count + 1; i++) 
+            newImmutableBuffer.Objects[i] = Objects[i];
+        
+        return newImmutableBuffer;
+    }
     
     public ImmutableBuffer<T>
     RemoveAt(int index) {
@@ -141,6 +163,19 @@ ImmutableBuffer<T> : IEnumerable<T>, IList<T>, ICollection<T>{
         int _objectsAdded = 0;
         for (var i = 0; i < Objects.Length; i++) {
             if (i == index)
+                continue;
+            newImmutableBuffer.Objects[_objectsAdded] = Objects[i];
+            _objectsAdded++;
+        }
+        return newImmutableBuffer;
+    }
+
+    public ImmutableBuffer<T>
+    Remove(T item) {
+        var newImmutableBuffer = States.GetBuffer(Count - 1);
+        int _objectsAdded = 0;
+        for (var i = 0; i < Objects.Length; i++) {
+            if (Objects[i].Equals(item))
                 continue;
             newImmutableBuffer.Objects[_objectsAdded] = Objects[i];
             _objectsAdded++;
@@ -185,7 +220,7 @@ ImmutableBuffer<T> : IEnumerable<T>, IList<T>, ICollection<T>{
         }
         return -1;
     }
-    
+
     void IList<T>.Insert(int index, T item) => throw new NotSupportedException();
     void IList<T>.RemoveAt(int index) => throw new NotSupportedException();
     void ICollection<T>.Add(T item) => throw new NotSupportedException();

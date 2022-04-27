@@ -11,7 +11,8 @@ BuffersHelper{
     MapToImmutableBuffer<TIn, TOut>(this IEnumerable<TIn> enumerable, Func<TIn, TOut> convert) => 
         ImmutableBuffer.Create<TOut>(enumerable.Select(convert).ToArray());
 
-    public static BufferedList<T> ToBufferedList<T>(this List<T> iEnumerable, BufferedList<T> bufferedList) where T : new() {
+    public static BufferedList<T> 
+    ToBufferedList<T>(this List<T> iEnumerable, BufferedList<T> bufferedList) where T : new() {
         foreach (var item in iEnumerable) {
             bufferedList.Add(item);
         }
@@ -31,13 +32,13 @@ BuffersHelper{
         bufferStorage.CreateBuffer(array);
 
     public static ImmutableBuffer<T> 
-    ToImmutableBuffer<T>(this IEnumerable<T> array, ImmutableBufferStorage<T>? bufferStorage = null) where T : new() =>
+    ToImmutableBuffer<T>(this IEnumerable<T> array, ImmutableBufferStorage<T>? bufferStorage = null) =>
         bufferStorage != null 
             ? bufferStorage.CreateBuffer(array.ToList())
             : ImmutableBufferStorage<T>.Empty.CreateBuffer(array.ToList());
-
+    
     public static ImmutableBuffer<T> 
-    SingleToImmutableBuffer<T>(this T item, ImmutableBufferStorage<T>? bufferStorage = null) where T : new() =>
+    SingleToImmutableBuffer<T>(this T item, ImmutableBufferStorage<T>? bufferStorage = null) =>
         bufferStorage != null 
             ? bufferStorage.CreateBuffer(item)
             : ImmutableBufferStorage<T>.Empty.CreateBuffer(item);
