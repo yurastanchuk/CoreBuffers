@@ -64,20 +64,13 @@ BufferedList<T> : IEnumerable<T>, IList<T>{
     public BufferedList(int initialSize = 10) {
         Objects = new T[initialSize];
         Count = 0;
+        Collections = new BufferCollections<T>();
     }
 
     public BufferCollections<T> Collections {get;}
     private SizedListStorage<T> ListStorage => Collections.ListStorage;
     private SizedArrayStorage<T> ArrayStorage => Collections.ArrayStorage;
     private ImmutableBufferStorage<T> ImmutableBufferStorage => Collections.ImmutableBufferStorage;
-
-    /*public BufferedList(int initialSize = 10) {
-        Objects = new T[initialSize];
-        Count = 0;
-        ListStorage =  new SizedListStorage<T>();
-        ArrayStorage = new SizedArrayStorage<T>();
-        ImmutableBufferStorage = new ImmutableBufferStorage<T>(new BufferedListStorage<T>());
-    }*/
     
     public BufferedList(BufferedList<T> other) {
         Objects = new T[other.Count];

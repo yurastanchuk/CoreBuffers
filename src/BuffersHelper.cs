@@ -20,8 +20,12 @@ BuffersHelper{
     }
      
     public static ImmutableBuffer<T> 
+    ToImmutableBuffer<T>(this IList<T> list) where T : new() =>
+        ImmutableBuffer.Create(list);
+
+    public static ImmutableBuffer<T> 
     ToImmutableBuffer<T>(this IList<T> list, ImmutableBufferStorage<T> buffer) where T : new() =>
-        buffer != null ? buffer.CreateBuffer(list) : ImmutableBuffer.Create(list);
+        buffer.CreateBuffer(list);
 
     public static ImmutableBuffer<T> 
     ToImmutableBuffer<T>(this IList<T> list, EntityBuffer<T> buffer) where T : new() =>
