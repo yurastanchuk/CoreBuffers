@@ -53,8 +53,6 @@ BufferedList<T> : IEnumerable<T>, IList<T>{
     public int Count {get; private set;}
     public bool IsReadOnly { get; }
 
-
-
     public BufferedList(BufferCollections<T> collections, int initialSize = 10) {
         Objects = new T[initialSize];
         Count = 0;
@@ -64,13 +62,12 @@ BufferedList<T> : IEnumerable<T>, IList<T>{
     public BufferedList(int initialSize = 10) {
         Objects = new T[initialSize];
         Count = 0;
-        Collections = new BufferCollections<T>();
     }
 
-    public BufferCollections<T> Collections {get;}
-    private SizedListStorage<T> ListStorage => Collections.ListStorage;
-    private SizedArrayStorage<T> ArrayStorage => Collections.ArrayStorage;
-    private ImmutableBufferStorage<T> ImmutableBufferStorage => Collections.ImmutableBufferStorage;
+    public BufferCollections<T>? Collections {get;}
+    private SizedListStorage<T>? ListStorage => Collections?.ListStorage;
+    private SizedArrayStorage<T>? ArrayStorage => Collections?.ArrayStorage;
+    private ImmutableBufferStorage<T>? ImmutableBufferStorage => Collections?.ImmutableBufferStorage;
     
     public BufferedList(BufferedList<T> other) {
         Objects = new T[other.Count];
@@ -228,7 +225,7 @@ BufferedList<T> : IEnumerable<T>, IList<T>{
     
     public List<T>
     ToList() {
-        var result = ListStorage.GetList(Count);
+        var result = ListStorage?.GetList(Count) ?? new List<T>(Count);
         for (var i = 0; i < Count; i++) {
             if (result.Count <= i)
                 result.Add(this[i]);
@@ -249,17 +246,17 @@ BufferedList<T> : IEnumerable<T>, IList<T>{
 
     public ImmutableBuffer<T>
     ToImmutableBuffer() =>
-        ImmutableBufferStorage.EmptyBuffer.Add(this);
+        ImmutableBufferStorage?.EmptyBuffer.Add(this) ?? ImmutableBuffer<T>.Empty.Add(this);
     
     public T[]
     GetEmptyArray(int size) {
-        var result = ArrayStorage.GetArray(Count);
+        var result = ArrayStorage?.GetArray(Count) ?? new T[Count];
         return result;
     }
 
     public T[]
     ToArray() {
-        var result = ArrayStorage.GetArray(Count);
+        var result = ArrayStorage?.GetArray(Count) ?? new T[Count];
         for (var i = 0; i < Count; i++) 
             result[i] = this[i];
 
@@ -279,5 +276,10 @@ BufferedList<T> : IEnumerable<T>, IList<T>{
     SetLast(T item) {
         Objects[Count - 1] = item;
     }
+
+    public T
+    Last() => Objects[Count - 1];
+
+
 }
 }

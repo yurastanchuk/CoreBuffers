@@ -18,7 +18,16 @@ BuffersHelper{
         }
         return bufferedList;
     }
+    
+    public static BufferedList<T> 
+    ToBufferedList<T>(this T[] iEnumerable, BufferedList<T> bufferedList) where T : new() {
+        foreach (var item in iEnumerable) {
+            bufferedList.Add(item);
+        }
+        return bufferedList;
+    }
      
+
     public static ImmutableBuffer<T> 
     ToImmutableBuffer<T>(this IList<T> list) where T : new() =>
         ImmutableBuffer.Create(list);
@@ -57,11 +66,11 @@ BuffersHelper{
     }
     
     public static void
-    AddOrAddToBufferedList<TKey, TValue>(this Dictionary<TKey, BufferedList<TValue>> dictionary, TKey key, TValue value, BufferedListStorage<TValue> listBuffer) where TValue : new() {
+    AddOrAddToBufferedList<TKey, TValue>(this Dictionary<TKey, BufferedList<TValue>> dictionary, TKey key, TValue value, BufferedListStorage<TValue>? listBuffer = null) {
         if (dictionary.TryGetValue(key, out var list))
             list.Add(value);
         else {
-            var newList = listBuffer.GetList();
+            var newList = listBuffer?.GetList() ?? new BufferedList<TValue>();
             newList.Add(value);
             dictionary.Add(key, newList);
         }
@@ -95,7 +104,30 @@ BuffersHelper{
         return result;
     }
 
+    public static BufferedList<T>
+    ToBufferedList<T>(this T item) {
+        var result = new BufferedList<T> {
+            item
+        };
+        return result;
+    }
+
     public static T
     Last<T>(this BufferedList<T> list) => list[^1];
+
+    public static BufferedList<TOut> 
+    MapToBufferedList<TIn, TOut>(this IList<TIn> list, Func<TIn, TOut> convert, BufferedList<TOut>? result = null) {
+        result ??= new BufferedList<TOut>(list.Count);
+        for (int i = 0; i < list.Count; i++) result.Add(convert(list[i]));
+        return result;
+    }
+
+    public static BufferedList<TOut> 
+    MapToBufferedList<TIn, TOut>(this IEnumerable<TIn> enumerable, Func<TIn, TOut> convert, BufferedList<TOut>? result = null) {
+        result ??= new BufferedList<TOut>();
+        foreach (var item in enumerable) 
+            result.Add(convert(item));
+        return result;
+    }
 }
 }
