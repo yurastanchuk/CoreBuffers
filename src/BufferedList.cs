@@ -6,37 +6,58 @@ namespace CoreBuffers {
     
 public class 
 BufferedListStorage<T>{
-    public List<BufferedList<T>> Items {get;} 
+    public List<BufferedList<T>>[] Chunks {get; private set;} 
     public int Position {get;private set;}
-    public BufferedListStorage(BufferCollections<T> collections, int initialSize = 0) {
-        Items = new List<BufferedList<T>>(capacity: initialSize);
-        for (int i = 0; i < initialSize; i++) 
-            Items.Add(new BufferedList<T>(collections));
-
+    public BufferedListStorage(BufferCollections<T> collections) {
+        Chunks = new List<BufferedList<T>>[10];
         _collections = collections;
+        Position = -1;
     }
 
     private BufferCollections<T> _collections;
-
-    private SizedListStorage<T> _listStorage => _collections.ListStorage;
-    private SizedArrayStorage<T> _arrayStorage => _collections.ArrayStorage;
-    private ImmutableBufferStorage<T> _immutableBufferStorage => _collections.ImmutableBufferStorage;
+    
+    private const int _chunkSize = 10000;
+    private List<BufferedList<T>> _currentChunk => Chunks[_chunkId];
+    private int _chunkId => Position / _chunkSize;
+    private int _chunkPosition => Position - _chunkId * _chunkSize;
+    private int _chunksCount;
 
     public BufferedList<T> 
     GetList()  {
-        Position++;
-        if (Items.Count > Position){
-            var item = Items[Position];
+        MoveCursor();
+
+        if (_chunkPosition < _currentChunk.Count){
+            var item = _currentChunk[_chunkPosition];
             item.Reclaim();
             return item;
         }
         var result = new BufferedList<T>(_collections);
-        Items.Add(result);
+        _currentChunk.Add(result);
         return result;
     }
     
-    public void Reclaim() {
-        Position = 0;
+    public void 
+    Reclaim() {
+        Position = -1;
+    }
+
+    private void
+    MoveCursor() {
+        Position++;
+        if (_chunkId >= Chunks.Length)
+            ExtendChunks();
+        if (_chunkId >= _chunksCount) {
+            Chunks[_chunkId] = new List<BufferedList<T>>(capacity: _chunkSize);
+            _chunksCount++;
+        }
+    }
+
+    private void
+    ExtendChunks() {
+        var newChunks = new List<BufferedList<T>>[Chunks.Length + 100];
+        for (var i = 0; i < Chunks.Length; i++)
+            newChunks[i] = Chunks[i];
+        Chunks = newChunks;
     }
 }
 
@@ -282,4 +303,5 @@ BufferedList<T> : IEnumerable<T>, IList<T>{
 
 
 }
+
 }

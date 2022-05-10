@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace CoreBuffers {
    
@@ -11,8 +12,8 @@ BufferCollections<T>{
     public SizedListStorage<T> ListStorage {get;} 
     public SizedArrayStorage<T> ArrayStorage {get;}
 
-    public BufferCollections() {
-        ListStorage = new SizedListStorage<T>();
+    public BufferCollections(int defaultListSize = 0) {
+        ListStorage = new SizedListStorage<T>(defaultListsCount: defaultListSize);
         ArrayStorage = new SizedArrayStorage<T>();
         ImmutableBufferStorage = new ImmutableBufferStorage<T>(this);
         BufferedListStorage = new BufferedListStorage<T>(this);
@@ -23,6 +24,9 @@ BufferCollections<T>{
 
     public BufferedList<T>
     GetList() => BufferedListStorage.GetList();
+
+    public List<T>
+    GetSizedList(int size) => ListStorage.GetList(size);
 
     public T[]
     GetArray(int size) => ArrayStorage.GetArray(size);
@@ -73,9 +77,10 @@ StructArrayBuffer<T> where T: struct{
 public class 
 SizedListStorage<T> {
     public List<ListSizedBuffer<T>> Buffers {get;private set;} 
-    public SizedListStorage(int initialSize = 0) {
+    public int DefaultListsCount {get;}
+    public SizedListStorage(int initialSize = 0, int defaultListsCount = 0) {
         Buffers = new List<ListSizedBuffer<T>>(initialSize);
-        GetExpandBuffer(initialSize);
+        DefaultListsCount = defaultListsCount;
     }
     
     private List<ListSizedBuffer<T>>
@@ -84,7 +89,7 @@ SizedListStorage<T> {
         for (int i = 0; i < Buffers.Count; i++) 
             newBuffer.Add(Buffers[i]);
         for (int i = Buffers.Count; i <= size; i++) {
-            newBuffer.Add(new ListSizedBuffer<T>(i));
+            newBuffer.Add(new ListSizedBuffer<T>(sizeOfList: i, itemsCount: i == size ? DefaultListsCount : 1));
         }
         return newBuffer;
     }
@@ -103,6 +108,9 @@ SizedListStorage<T> {
             Buffers[i].Reclaim();
         }
     }
+
+    public void
+    AddListSizedBuffer(int sizeOfList, int? itemsCount = null) => Buffers.Add(new ListSizedBuffer<T>(sizeOfList, itemsCount));
 }
 
 public class 
@@ -148,12 +156,12 @@ ListSizedBuffer<T> {
     public int Position {get;private set;}
     public int SizeOfList {get;}
 
-    public ListSizedBuffer(int sizeOfList) {
+    public ListSizedBuffer(int sizeOfList, int? itemsCount = null) {
         SizeOfList = sizeOfList;
-        Objects = new List<List<T>>(1);
+        Objects = new List<List<T>>(itemsCount ?? 1);
         Objects.Add(new List<T>(SizeOfList));
     }
-
+    
     public List<T> GetObject() {
         Position++;
         if (Objects.Count > Position){
@@ -196,31 +204,106 @@ ArraySizedBuffer<T> {
 
 public class 
 ObjectBuffer<T> where T: new() {
-    public List<T> Objects {get;} 
+    public List<T>[] Chunks {get; private set;} 
     public int Position {get;private set;}
-    public ObjectBuffer(int initialSize = 0) {
-        Objects = new List<T>(capacity: initialSize);
-        for (int i = 0; i < initialSize; i++) 
-            Objects.Add(new T());
+    public ObjectBuffer(int chunkSize = 10) {
+        _chunkSize = chunkSize;
+        Chunks = new List<T>[_chunkSize];
+        Position = -1;
     }
 
     public ObjectBuffer(List<T> objects) {
-        Objects = objects;
+        _chunkSize = objects.Count;
+        Chunks = new List<T>[1];
+        Chunks[0] = objects;
+        Position = -1;
     }
 
-    public T GetObject()  {
-        Position++;
-        if (Objects.Count > Position){
-            var item = Objects[Position];
+    public int Length => _chunksCount * _chunkSize;
+    
+    public T
+    GetObject()  {
+        MoveCursor();
+
+        if (_chunkPosition < _currentChunk.Count){
+            var item = _currentChunk[_chunkPosition];
             return item;
         }
         var result = new T();
-        Objects.Add(result);
+        _currentChunk.Add(result);
         return result;
     }
     
-    public void Reclaim() => Position = 0;
+    
+    public ObjectBuffer<T> Reclaim() {
+        Position = -1;
+        return this;
+    }
+
+    /// <summary>
+    /// Computes average objects added per iteration
+    /// </summary>
+    public ObjectBuffer<T> 
+    SetThreshold() {
+        var sum = 0;
+        foreach (var item in NewObjectsPerIteration) 
+            sum += item;
+        
+        _objectsThreshold = sum / NewObjectsPerIteration.Count;
+        return this;
+    }
+
+    private int _objectsThreshold;
+
+    /// <summary>
+    /// Checks, if it can be used without allocation new objects
+    /// </summary>
+    public bool
+    IsReclaimRequired() => Length - 1 - Position < _objectsThreshold * 1.2;
+
+    private List<int> NewObjectsPerIteration {get;} = new List<int>();
+
+    private int _lastObjectsCount ;
+    
+    public void
+    AddObjectsPerIteration() {
+        //first allocation is always much bigger than other, so we just ignore it
+        if (_lastObjectsCount == 0) {
+            _lastObjectsCount = Length;
+            return;
+        }
+        NewObjectsPerIteration.Add(Position + 1 - _lastObjectsCount);
+        _lastObjectsCount = Length;
+    }
+
+    
+    private readonly int _chunkSize;
+    private List<T> _currentChunk => Chunks[_chunkId];
+    private int _chunkId => Position / _chunkSize;
+    private int _chunkPosition => Position - _chunkId * _chunkSize;
+    private int _chunksCount;
+
+    private void
+    MoveCursor() {
+        Position++;
+        if (_chunkId >= Chunks.Length)
+            ExtendChunks();
+        if (_chunkId >= _chunksCount) {
+            Chunks[_chunkId] = new List<T>(capacity: _chunkSize);
+            _chunksCount++;
+        }
+    }
+
+    private void
+    ExtendChunks() {
+        var newChunks = new List<T>[Chunks.Length + 100];
+        for (var i = 0; i < Chunks.Length; i++)
+            newChunks[i] = Chunks[i];
+        Chunks = newChunks;
+    }
 }
+
+
 
 public class 
 ListBuffer<T> where T: new() {
@@ -458,10 +541,10 @@ public class
 DictionariesBuffer<TKey, TValue> {
     public List<Dictionary<TKey, TValue>> Objects {get;} 
     public int Position {get;private set;}
-    public DictionariesBuffer(int initialSize = 0) {
+    public int DefaultCapacity {get;}
+    public DictionariesBuffer(int initialSize = 0, int defaultCapacity = 0) {
         Objects = new List<Dictionary<TKey, TValue>>(capacity: initialSize);
-        for (int i = 0; i < initialSize; i++) 
-            Objects.Add(new Dictionary<TKey, TValue>());
+        DefaultCapacity = defaultCapacity;
     }
     
     public Dictionary<TKey, TValue> 
@@ -472,7 +555,7 @@ DictionariesBuffer<TKey, TValue> {
             item.Clear();
             return item;
         }
-        var result = new Dictionary<TKey, TValue>();
+        var result = new Dictionary<TKey, TValue>(DefaultCapacity);
         Objects.Add(result);
         return result;
     }
