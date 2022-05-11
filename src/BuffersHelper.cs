@@ -26,8 +26,7 @@ BuffersHelper{
         }
         return bufferedList;
     }
-     
-
+    
     public static ImmutableBuffer<T> 
     ToImmutableBuffer<T>(this IList<T> list) where T : new() =>
         ImmutableBuffer.Create(list);

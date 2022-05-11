@@ -246,6 +246,10 @@ ObjectBuffer<T> where T: new() {
     public ObjectBuffer<T> 
     SetThreshold() {
         var sum = 0;
+        if (NewObjectsPerIteration.Count == 0) {
+            _objectsThreshold = _lastObjectsCount;
+            return this;
+        }
         foreach (var item in NewObjectsPerIteration) 
             sum += item;
         
@@ -269,11 +273,11 @@ ObjectBuffer<T> where T: new() {
     AddObjectsPerIteration() {
         //first allocation is always much bigger than other, so we just ignore it
         if (_lastObjectsCount == 0) {
-            _lastObjectsCount = Length;
+            _lastObjectsCount = Position + 1;
             return;
         }
         NewObjectsPerIteration.Add(Position + 1 - _lastObjectsCount);
-        _lastObjectsCount = Length;
+        _lastObjectsCount = Position + 1;
     }
 
     
@@ -302,8 +306,6 @@ ObjectBuffer<T> where T: new() {
         Chunks = newChunks;
     }
 }
-
-
 
 public class 
 ListBuffer<T> where T: new() {
@@ -535,7 +537,6 @@ LazyBuffer<Tin, Tout>{
         ValueCreated = false;
     }
 }
-
 
 public class 
 DictionariesBuffer<TKey, TValue> {
