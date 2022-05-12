@@ -52,9 +52,7 @@ BytesPool{
     private BytesPool
     GoToNextChunk() {
         Position = (_chunkId + 1) * _chunkSize;
-        if (!HasSpaceForChunk())
-            ExtendChunks();
-        Chunks[_chunkId] = new BytesChunk(chunkSize: _chunkSize);
+        CheckCurrentChunk();
         return this;
     }
 
@@ -68,9 +66,14 @@ BytesPool{
 
     private bool
     HasChunkFreeBytes(int bytesCount) {
+        CheckCurrentChunk();
+        return _chunkPosition + bytesCount <= _chunkSize;
+    }
+
+    private void
+    CheckCurrentChunk() {
         if (!HasCurrentChunk())
             Chunks[_chunkId] = new BytesChunk(chunkSize: _chunkSize);
-        return _chunkPosition + bytesCount <= _chunkSize;
     }
 }
 

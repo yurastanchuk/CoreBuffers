@@ -26,6 +26,15 @@ BuffersHelper{
         }
         return bufferedList;
     }
+
+    public static BufferedList<T> 
+    ToBufferedList<T>(this T[] iEnumerable) {
+        var bufferedList = new BufferedList<T>();
+        foreach (var item in iEnumerable) {
+            bufferedList.Add(item);
+        }
+        return bufferedList;
+    }
     
     public static ImmutableBuffer<T> 
     ToImmutableBuffer<T>(this IList<T> list) where T : new() =>
@@ -90,21 +99,21 @@ BuffersHelper{
     }
 
     public static BufferedList<T>
-    ToBufferedList<T>(this T item, BufferCollections<T> buffer) {
+    ToSingleBufferedList<T>(this T item, BufferCollections<T> buffer) {
         var result = buffer.BufferedListStorage.GetList();
         result.Add(item);
         return result;
     }
 
     public static BufferedList<T>
-    ToBufferedList<T>(this T item, EntityBuffer<T> buffer) where T : new() {
+    ToSingleBufferedList<T>(this T item, EntityBuffer<T> buffer) where T : new() {
         var result = buffer.BufferedListStorage.GetList();
         result.Add(item);
         return result;
     }
 
     public static BufferedList<T>
-    ToBufferedList<T>(this T item) {
+    ToSingleBufferedList<T>(this T item) {
         var result = new BufferedList<T> {
             item
         };

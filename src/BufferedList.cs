@@ -133,6 +133,8 @@ BufferedList<T> : IEnumerable<T>, IList<T>{
         }
     }
 
+    public bool IsEmpty => Count == 0;
+
     public void 
     Add(T item) {
         if (Count == Objects.Length)
@@ -143,20 +145,21 @@ BufferedList<T> : IEnumerable<T>, IList<T>{
         Count ++;
     }
 
-    public void Clear() {
-        Objects.Clear();
-    }
+    public void 
+    Clear() => Objects.Clear();
 
-    public bool Contains(T item) {
+    public bool 
+    Contains(T item) {
         var equalityComparer = EqualityComparer<T>.Default;
-        for (var i = 0; i < Count; i++) {
+        for (var i = 0; i < Count; i++) 
             if (equalityComparer.Equals(Objects[i], item))
                 return true;
-        }
+        
         return false;
     }
 
-    public void CopyTo(T[] array, int arrayIndex) {
+    public void 
+    CopyTo(T[] array, int arrayIndex) {
         foreach (var element in this) 
             array[arrayIndex++] = element;
     }
@@ -266,8 +269,7 @@ BufferedList<T> : IEnumerable<T>, IList<T>{
     }
 
     public ImmutableBuffer<T>
-    ToImmutableBuffer() =>
-        ImmutableBufferStorage?.EmptyBuffer.Add(this) ?? ImmutableBuffer<T>.Empty.Add(this);
+    ToImmutableBuffer() => ImmutableBufferStorage?.EmptyBuffer.Add(this) ?? ImmutableBuffer<T>.Empty.Add(this);
     
     public T[]
     GetEmptyArray(int size) {
@@ -294,14 +296,9 @@ BufferedList<T> : IEnumerable<T>, IList<T>{
     }
 
     public void
-    SetLast(T item) {
-        Objects[Count - 1] = item;
-    }
-
+    SetLast(T item) => Objects[Count - 1] = item;
+    
     public T
     Last() => Objects[Count - 1];
-
-
 }
-
 }
